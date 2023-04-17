@@ -57,13 +57,22 @@ exports.readOne = (id, callback) => {
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
-  if (!item) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    items[id] = text;
-    callback(null, { id, text });
-  }
+  let newPath = path.join(exports.dataDir, `${id}.txt`);
+
+  exports.readOne(id, (err, todo) => {
+    if (err) {
+      console.log('ERROR: CANNOT FIND ID');
+      callback(err, {});
+    } else {
+      fs.writeFile(newPath, text, (err) => {
+        if (err) {
+          console.log('Failed to update.');
+        } else {
+          callback(err, {id: id, text: text});
+        }
+      });
+    }
+  });
 };
 
 exports.delete = (id, callback) => {
