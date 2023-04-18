@@ -32,23 +32,25 @@ exports.create = (text, callback) => {
 
 exports.readAll = (callback) => {
 
-  return fs.readdirAsync(exports.dataDir)
-    .then((files) => {
-      return Promise.all(
-        files.map((file) => {
-          let fileLocation = path.join(exports.dataDir, file);
-          return fs.readFileAsync(fileLocation)
-            .then((contents) => {
-              console.log('CONTENTS', contents.toString());
-              return {id: file.slice(0, 5), text: contents.toString()};
-            });
-        })
-      )
-        .then((objects) => { return objects; });
-    });
-  // return promise
-  // readdir is an array of file names
-  // iterate through each file, reading the contents with readFile
+  fs.readdir(exports.dataDir, (err, files) => {
+    if (err) {
+      console.log('ERROR', err);
+      return callback(err);
+    } else {
+      let contents = files.map(file => {
+        let fileLocation = path.join(exports.dataDir, file);
+        let id = path.basename(file, '.txt');
+        return fs.readFileAsync(fileLocation)
+          .then(fileData => {
+            return {id: id, text: fileData.toString()};
+          });
+      });
+      Promise.all(contents)
+        .then((items) => {
+          callback(err, items);
+        });
+    }
+  });
 };
 
 exports.readOne = (id, callback) => {
