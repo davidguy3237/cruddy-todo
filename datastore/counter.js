@@ -1,3 +1,4 @@
+const Promise = require('bluebird');
 const fs = require('fs');
 const path = require('path');
 const sprintf = require('sprintf-js').sprintf;
@@ -23,6 +24,8 @@ const readCounter = (callback) => {
   });
 };
 
+const readCounterPromise = Promise.promisify(readCounter);
+
 const writeCounter = (count, callback) => {
   var counterString = zeroPaddedNumber(count);
   fs.writeFile(exports.counterFile, counterString, (err) => {
@@ -33,22 +36,37 @@ const writeCounter = (count, callback) => {
     }
   });
 };
+const writeCounterPromise = Promise.promisify(writeCounter);
 
 // Public API - Fix this function //////////////////////////////////////////////
 
 exports.getNextUniqueId = (callback) => {
+  readCounterPromise()
+    .then(count => writeCounterPromise(count + 1))
+    .then(counterString => callback(null, counterString));
 
-  readCounter((err, count) => {
-    if (err) {
-      console.log('READ COUNTER ERROR');
-    } else {
-      writeCounter(count + 1, (err, counterString) => {
-        callback(err, counterString);
-      });
-    }
-  });
+  //OLD VERSION
+  // readCounter((err, count) => {
+  //   if (err) {
+  //     console.log('READ COUNTER ERROR');
+  //   } else {
+  //     writeCounter(count + 1, (err, counterString) => {
+  //       callback(err, counterString);
+  //     });
+  //   }
+  // });
 };
 
+//EXAMPLE PROMISE
+// const promise1 = new Promise((resolve, reject) => {
+//   setTimeout(() => {
+//     resolve('foo');
+//   }, 300);
+// });
+
+// Promise()
+//  .then()
+//  .catch()
 
 
 // Configuration -- DO NOT MODIFY //////////////////////////////////////////////

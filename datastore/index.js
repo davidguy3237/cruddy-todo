@@ -14,17 +14,17 @@ exports.create = (text, callback) => {
     if (err) {
       console.log('ERROR COULDNT GET UNIQUE ID');
     } else {
-
       let newPath = path.join(exports.dataDir, `${id}.txt`);
-
-      fs.writeFile(newPath, text, (err) => {
-        if (err) {
-          console.log('write File ERROR:', err);
-        } else {
-          callback(err, {text: text, id: id});
-        }
-      });
-
+      let newDate = new Date().toString();
+      let newObj = {
+        id: id,
+        text: text,
+        createDate: newDate,
+        updateDate: null,
+      };
+      let stringified = JSON.stringify(newObj);
+      fs.writeFileAsync(newPath, stringified)
+        .then(() => callback(err, newObj));
     }
   });
 
@@ -41,9 +41,7 @@ exports.readAll = (callback) => {
         let fileLocation = path.join(exports.dataDir, file);
         let id = path.basename(file, '.txt');
         return fs.readFileAsync(fileLocation)
-          .then(fileData => {
-            return {id: id, text: fileData.toString()};
-          });
+          .then(fileData => JSON.parse(fileData));
       });
       Promise.all(contents)
         .then((items) => {
@@ -56,13 +54,9 @@ exports.readAll = (callback) => {
 exports.readOne = (id, callback) => {
   let newPath = path.join(exports.dataDir, `${id}.txt`);
 
-  fs.readFile(newPath, (err, fileData) => {
-    if (err) {
-      callback(err, {});
-    } else {
-      callback(err, {id: id, text: fileData.toString()});
-    }
-  });
+  fs.readFileAsync(newPath)
+    .then(fileData => callback(null, JSON.parse(fileData)))
+    .catch(err => callback(err));
 
 };
 
@@ -72,15 +66,15 @@ exports.update = (id, text, callback) => {
   exports.readOne(id, (err, todo) => {
     if (err) {
       console.log('ERROR: CANNOT FIND ID');
-      callback(err, {});
+      callback(err);
     } else {
-      fs.writeFile(newPath, text, (err) => {
-        if (err) {
-          console.log('Failed to update.');
-        } else {
-          callback(err, {id: id, text: text});
-        }
-      });
+      let updatedObj = Object.assign({}, todo);
+      updatedObj.text = text;
+      updatedObj.updateDate = new Date().toString();
+      let stringified = JSON.stringify(updatedObj);
+      fs.writeFileAsync(newPath, stringified)
+        .then(() => callback(null, updatedObj))
+        .catch(err => console.log(err));
     }
   });
 };
